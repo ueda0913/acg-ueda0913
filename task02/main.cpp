@@ -82,7 +82,7 @@ int number_of_intersection_ray_against_quadratic_bezier(
   float tl = 0.0;
   float tr = 1.0;
   if ((calc_position(ps, pc, pe, tl) - org).dot(w) * (calc_position(ps, pc, pe, tr) - org).dot(w) <= 0)
-  {
+  { // Because dimension of t is 2, it is enough to consider the case that one root exists in 0 to 1.
     while (true)
     {
       float pivot = (tl + tr) / 2;
