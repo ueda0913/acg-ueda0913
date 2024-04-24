@@ -17,13 +17,13 @@
 float area(
     const Eigen::Vector2f &p0,
     const Eigen::Vector2f &p1,
-    const Eigen::Vector2f &p2) {
+    const Eigen::Vector2f &p2)
+{
   const auto v01 = p1 - p0;
   const auto v02 = p2 - p0;
   // return 0.5f * (v01[0] * v02[1] - v01[1] * v02[0]); // right handed coordinate
   return 0.5f * (v01[1] * v02[0] - v01[0] * v02[1]); // left-handed coordinate (because pixel y-coordinate is going down)
 }
-
 
 /***
  * compute number of intersection of a ray against a line segment
@@ -37,16 +37,20 @@ int number_of_intersection_ray_against_edge(
     const Eigen::Vector2f &org,
     const Eigen::Vector2f &dir,
     const Eigen::Vector2f &ps,
-    const Eigen::Vector2f &pe) {
+    const Eigen::Vector2f &pe)
+{
   auto a = area(org, org + dir, ps);
   auto b = area(org, pe, org + dir);
   auto c = area(org, ps, pe);
-  auto d = area(dir+ps, ps, pe);
-  if (a * b > 0.f && d * c < 0.f) { return 1; }
+  auto d = area(dir + ps, ps, pe);
+  if (a * b > 0.f && d * c < 0.f)
+  {
+    return 1;
+  }
   return 0;
   // the following code was a bug
-  //auto d = area(org + dir, ps, pe);
-  //if (a * b > 0.f && d * c > 0.f && fabs(d) > fabs(c)) { return 1; }
+  // auto d = area(org + dir, ps, pe);
+  // if (a * b > 0.f && d * c > 0.f && fabs(d) > fabs(c)) { return 1; }
 }
 
 /***
@@ -58,21 +62,66 @@ int number_of_intersection_ray_against_edge(
  * @param pe the other end point
  * @return the number of intersections
  */
+
+Eigen::Vector2f calc_position(const Eigen::Vector2f &ps, const Eigen::Vector2f &pc, const Eigen::Vector2f &pe, float t)
+{
+  return t * t * ps + 2 * t * (1 - t) * pc + (1 - t) * (1 - t) * pe;
+}
+
 int number_of_intersection_ray_against_quadratic_bezier(
     const Eigen::Vector2f &org,
     const Eigen::Vector2f &dir,
     const Eigen::Vector2f &ps,
     const Eigen::Vector2f &pc,
-    const Eigen::Vector2f &pe) {
+    const Eigen::Vector2f &pe)
+{
   // comment out below to do the assignment
-  return number_of_intersection_ray_against_edge(org, dir, ps, pe);
+  // return number_of_intersection_ray_against_edge(org, dir, ps, pe);
   // write some code below to find the intersection between ray and the quadratic
+  const auto w = Eigen::Vector2f(-dir.y(), dir.x());
+  float tl = 0.0;
+  float tr = 1.0;
+  if ((calc_position(ps, pc, pe, tl) - org).dot(w) * (calc_position(ps, pc, pe, tr) - org).dot(w) <= 0)
+  {
+    while (true)
+    {
+      float pivot = (tl + tr) / 2;
+      if (tr - tl < 0.0001)
+      {
+        tl = pivot;
+        break;
+      }
+      if ((calc_position(ps, pc, pe, tl) - org).dot(w) * (calc_position(ps, pc, pe, pivot) - org).dot(w) <= 0)
+      {
+        tr = pivot;
+      }
+      else
+      {
+        tl = pivot;
+      }
+    }
+    if ((calc_position(ps, pc, pe, tl) - org).dot(dir) > 0)
+    {
+      // printf("%f\n", (calc_position(ps, pc, pe, tl)-org).dot(dir) / (calc_position(ps, pc, pe, tl)-org).norm() / dir.norm());
+      return 1;
+    }
+    else
+    {
+      return 0;
+    }
+  }
+  else
+  {
+    return 0;
+  }
 }
 
-int main() {
+int main()
+{
   const auto input_file_path = std::filesystem::path(PROJECT_SOURCE_DIR) / ".." / "asset" / "r.svg";
   const auto [width, height, shape] = acg::svg_get_image_size_and_shape(input_file_path);
-  if (width == 0) { // something went wrong in loading the function
+  if (width == 0)
+  { // something went wrong in loading the function
     std::cout << "file open failure" << std::endl;
     abort();
   }
@@ -80,25 +129,33 @@ int main() {
   const std::vector<std::vector<acg::Edge>> loops = acg::svg_loops_from_outline_path(outline_path);
   //
   std::vector<unsigned char> img_data(width * height, 255); // grayscale image initialized white
-  for (unsigned int ih = 0; ih < height; ++ih) {
-    for (unsigned int iw = 0; iw < width; ++iw) {
+  for (unsigned int ih = 0; ih < height; ++ih)
+  {
+    for (unsigned int iw = 0; iw < width; ++iw)
+    {
       const auto org = Eigen::Vector2f(iw + 0.5, ih + 0.5); // pixel center
-      const auto dir = Eigen::Vector2f(60., 20.); // search direction
+      const auto dir = Eigen::Vector2f(60., 20.);           // search direction
       int count_cross = 0;
-      for (const auto &loop: loops) { // loop over loop (letter R have internal/external loops)
-        for (const auto &edge: loop) { // loop over edge in the loop
-          if (edge.is_bezier) { // in case the edge is a quadratic Bézier
+      for (const auto &loop : loops)
+      { // loop over loop (letter R have internal/external loops)
+        for (const auto &edge : loop)
+        { // loop over edge in the loop
+          if (edge.is_bezier)
+          { // in case the edge is a quadratic Bézier
             count_cross += number_of_intersection_ray_against_quadratic_bezier(
                 org, dir,
                 edge.ps, edge.pc, edge.pe);
-          } else { // in case the edge is a line segment
+          }
+          else
+          { // in case the edge is a line segment
             count_cross += number_of_intersection_ray_against_edge(
                 org, dir,
                 edge.ps, edge.pe);
           }
         }
       }
-      if (count_cross % 2 == 1) { // Jordan's curve theory
+      if (count_cross % 2 == 1)
+      {                                // Jordan's curve theory
         img_data[ih * width + iw] = 0; // paint black if it is inside
       }
     }
