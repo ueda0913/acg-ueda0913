@@ -30,6 +30,7 @@ void main()
         x0 = outputPos[0];
         y0 = outputPos[1];
         z0 = outputPos[2];
+        z0 = (z0 - 1) / 3;  // [-2, -0.5] -> [-1, -0.5] zrange
     }
     // do not edit below
 
