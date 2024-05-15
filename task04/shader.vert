@@ -24,9 +24,12 @@ void main()
         // make sure the occlusion is correctly computed.
         // the mirror is behind the armadillo, so the reflected image should be behind the armadillo.
         // furthermore, make sure the occlusion is correctly computed for the reflected image.
-        //x0 = ???
-        //y0 = ???
-        //z0 = ???
+        vec3 inputPos = vec3(x0, y0, z0);
+        float dist =  dot((org - inputPos), nrm);
+        vec3 outputPos  = inputPos + 2.0 * dist * nrm;
+        x0 = outputPos[0];
+        y0 = outputPos[1];
+        z0 = outputPos[2];
     }
     // do not edit below
 
