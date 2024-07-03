@@ -137,7 +137,7 @@ class HelloWorld(mglw.WindowConfig):
         L = self.matrix_laplace
         x_def = self.vtx2xyz_def
         x_ini = self.vtx2xyz_ini
-        self.vtx2xyz_def[:] = spsolve(D+L, D @ x_def + L @ x_ini)
+        # self.vtx2xyz_def[:] = spsolve(D+L, D @ x_def + L @ x_ini)
         # Problem 3: Bi-Laplacian deformation, which minimizes (x-x_def)D(x-x_def) + (x-x_ini)L^2(x-x_ini) w.r.t x,
         L2 = self.matrix_bilaplace
         self.vtx2xyz_def[:] = spsolve(D+L2, D @ x_def + L2 @ x_ini)
